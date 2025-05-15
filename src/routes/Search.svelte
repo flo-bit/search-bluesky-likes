@@ -10,10 +10,14 @@
 
 	let loading = $state(true);
 
+	let count = $state(0);
+
 	function addLikeId(id: string) {
 		likesIds.add(id);
 		// save in local storage
 		localStorage.setItem('likes-ids', Array.from(likesIds).join(','));
+
+		count = likesIds.size;
 	}
 
 	function getLikesIds() {
@@ -21,11 +25,15 @@
 		if (ids) {
 			likesIds = new Set(ids.split(','));
 		}
+
+		count = likesIds.size;
 	}
 
 	function clearLikesIds() {
 		likesIds.clear();
 		localStorage.removeItem('likes-ids');
+
+		count = 0;
 	}
 
 	async function clearIndex() {
@@ -35,6 +43,8 @@
 		index.clear();
 
 		await index.commit();
+
+		count = 0;
 	}
 
 	onMount(async () => {
@@ -172,7 +182,7 @@
 />
 
 {#if loading}
-	<Heading>Loading your likes...</Heading>
+	<Heading>Loading your likes... ({count})</Heading>
 {:else}
 	<Navbar class="mx-2 max-w-xl sm:mx-auto md:top-10">
 		<Input
