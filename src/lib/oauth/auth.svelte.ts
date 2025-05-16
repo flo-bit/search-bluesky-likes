@@ -8,8 +8,10 @@ import {
 	getSession
 } from '@atcute/oauth-browser-client';
 import { dev } from '$app/environment';
-import { XRPC } from '@atcute/client';
+import { CredentialManager, XRPC } from '@atcute/client';
 import { metadata } from './const';
+import { AtpBaseClient } from '@atproto/api';
+import type { DidDocument } from '@atcute/client/utils/did';
 
 export const client = $state({
 	agent: null as OAuthUserAgent | null,
@@ -179,4 +181,67 @@ async function authorizationFlow(input: string) {
 
 		window.addEventListener('pageshow', listener, { once: true });
 	});
+}
+
+const didPDSCache: Record<string, string> = {};
+const didDocCache: Record<string, DidDocument> = {};
+
+const getPDS = async (did: string) => {
+	if (did in didPDSCache) return didPDSCache[did];
+	const res = await fetch(
+		did.startsWith('did:web')
+			? `https://${did.split(':')[2]}/.well-known/did.json`
+			: 'https://plc.directory/' + did
+	);
+
+	return res.json().then((doc) => {
+		if (!doc.service) throw new Error('No PDS found');
+		for (const service of doc.service) {
+			if (service.id === '#atproto_pds') {
+				didPDSCache[did] = service.serviceEndpoint.toString();
+				didDocCache[did] = doc;
+			}
+		}
+		return didPDSCache[did];
+	});
+};
+
+export async function listRecords({
+	did,
+	collection,
+	cursor
+}: {
+	did: string;
+	collection: string;
+	cursor?: string;
+}) {
+	const pds = await getPDS(did);
+
+	const agent = new AtpBaseClient({ service: pds });
+
+	const likes = await agent.com.atproto.repo.listRecords({
+		repo: did,
+		collection,
+		limit: 100,
+		cursor
+	});
+
+	return likes;
+}
+
+export async function resolveHandle({ handle }: { handle: string }) {
+	const agent = new AtpBaseClient({ service: 'https://api.bsky.app' });
+
+	const data = await agent.com.atproto.identity.resolveHandle({ handle });
+	return data.data.did;
+}
+
+export async function getPosts({ uris }: { uris: string[] }) {
+	const agent = new AtpBaseClient({ service: 'https://api.bsky.app' });
+
+	const posts = await agent.app.bsky.feed.getPosts({
+		uris
+	});
+
+	return posts;
 }

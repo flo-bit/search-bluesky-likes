@@ -4,47 +4,33 @@
 	import { blueskyPostToPostData, Post } from '$lib/post';
 	import { Document, Charset, IndexedDB } from 'flexsearch';
 	import { onMount } from 'svelte';
+	import { loadLikes } from '$lib';
+	import { db } from '$lib/db/database.svelte';
+	import { getPosts } from '$lib/oauth/auth.svelte';
 
 	let index: Document;
-	let likesIds = $state(new Set<string>());
-
 	let loading = $state(true);
 
-	let count = $state(0);
+	async function loadPosts(uris: string[]) {
+		if (!index) return;
 
-	function addLikeId(id: string) {
-		likesIds.add(id);
-		// save in local storage
-		localStorage.setItem('likes-ids', Array.from(likesIds).join(','));
+		console.log('loading posts', uris.length);
+		const posts = await getPosts({ uris });
+		for (let post of posts.data.posts) {
+			if (!db.posts.hasPost(post.uri)) db.posts.addPost(post);
 
-		count = likesIds.size;
-	}
+			index.add(JSON.parse(JSON.stringify(post)));
 
-	function getLikesIds() {
-		const ids = localStorage.getItem('likes-ids');
-		if (ids) {
-			likesIds = new Set(ids.split(','));
+			await index.commit();
 		}
-
-		count = likesIds.size;
-	}
-
-	function clearLikesIds() {
-		likesIds.clear();
-		localStorage.removeItem('likes-ids');
-
-		count = 0;
 	}
 
 	async function clearIndex() {
 		if (!index) return;
 
-		clearLikesIds();
 		index.clear();
 
 		await index.commit();
-
-		count = 0;
 	}
 
 	onMount(async () => {
@@ -90,59 +76,19 @@
 
 		await index.mount(db);
 
-		getLikesIds();
+		clearIndex();
+		// getLikesIds();
 		getLikes();
 	});
 
 	async function getLikes() {
-		if (!client.profile?.did || !client.rpc || !index) return;
+		if (!client.profile?.did || !index) return;
 
-		let all = [];
+		console.log('loading likes', db.likes.ids.size);
 
-		let cursor = undefined;
-		let response = undefined;
-		let found = false;
-		let limit = 10;
-		do {
-			try {
-				response = await client.rpc.request({
-					type: 'get',
-					nsid: 'app.bsky.feed.getActorLikes',
-					params: {
-						actor: client.profile.did,
-						limit,
-						cursor
-					}
-				});
-			} catch (error) {
-				// logout
-				await logout();
-				toast.error('Failed to get likes, please login again');
-				break;
-			}
-			all.push(...response?.data.feed);
+		await loadLikes(client.profile.did);
 
-			cursor = response?.data.cursor;
-			console.log(response?.data.feed);
-
-			for (let like of response?.data.feed) {
-				if (likesIds.has(like.post.uri)) {
-					found = true;
-					console.log('found like in local db, stopping getting more likes');
-					break;
-				}
-
-				addLikeId(like.post.uri);
-			}
-
-			limit = 100;
-		} while (cursor && response?.data.feed.length > 0 && !found);
-
-		for (let like of all) {
-			index.add(like.post);
-		}
-
-		await index.commit();
+		console.log('likes loaded', db.likes.ids.size);
 
 		loading = false;
 	}
@@ -151,6 +97,43 @@
 
 	let search = $state('');
 	let results = $state([]);
+
+	let currentLoading = new Set<string>();
+
+	async function loadMissingPosts(likes: {id: string}[]) {
+		let joined: string[] = [];
+		for (let like of likes) {
+			if (currentLoading.has(like.id)) continue;
+
+			currentLoading.add(like.id);
+			joined.push(like.id);
+
+			if (joined.length > 24) {
+				await loadPosts(joined);
+				joined = [];
+			}
+		}
+
+		if (joined.length > 0) {
+			await loadPosts(joined);
+		}
+	}
+
+	$effect(() => {
+		if (loading) return;
+
+		// get likes where we havent loaded the posts
+		const likes = db.likes.all.filter(
+			(like) => !db.posts.hasPost(like.id) && !currentLoading.has(like.id)
+		);
+
+		// if(loading && likes.length < 24) {
+		// 	console.log('not enough likes to load', likes.length);
+		// 	return;
+		// }
+
+		loadMissingPosts(likes);
+	});
 
 	$effect(() => {
 		if (!search) return;
@@ -173,6 +156,9 @@
 
 		return `https://bsky.app/profile/${handle}/post/${rkey}`;
 	}
+
+	const likeCount = $derived(db.likes.ids.size);
+	const postCount = $derived(db.posts.ids.size);
 </script>
 
 <svelte:window
@@ -182,7 +168,7 @@
 />
 
 {#if loading}
-	<Heading>Loading your likes... ({count})</Heading>
+	<Heading>Loading your likes... ({likeCount})</Heading>
 {:else}
 	<Navbar class="mx-2 max-w-xl sm:mx-auto md:top-10">
 		<Input
@@ -194,21 +180,23 @@
 		/>
 	</Navbar>
 	<span class="text-base-600 dark:text-base-400 text-xs"
-		>results: {search ? results.length : 0}, likes loaded: {likesIds.size}</span
+		>results: {search ? results.length : 0}, likes loaded: {db.likes.ids.size}, posts loaded: {postCount}</span
 	>
 {/if}
 
 {#if results.length > 0 && search}
 	<ul class="divide-base-100 mt-4 flex flex-col divide-y text-sm">
-		{#each results as result (result.doc.uri)}
-			<div class="border-base-200 relative border-b py-2">
-				<Post
-					href={getLink(result.doc.uri, result.doc.author.handle)}
-					liked
-					data={blueskyPostToPostData(result.doc)}
-					class="pb-2"
-				/>
-			</div>
+		{#each results as result (result.id)}
+			{#if result.doc}
+				<div class="border-base-200 relative border-b py-2">
+					<Post
+						href={getLink(result.id, result.doc.author.handle)}
+						liked
+						data={blueskyPostToPostData(result.doc)}
+						class="pb-2"
+					/>
+				</div>
+			{/if}
 		{/each}
 	</ul>
 {:else if search}

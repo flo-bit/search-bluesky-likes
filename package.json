@@ -40,7 +40,9 @@
 		"@atcute/oauth-browser-client": "^1.0.13",
 		"@fuxui/base": "^0.2.1",
 		"@fuxui/social": "^0.2.1",
-		"flexsearch": "^0.8.167"
+		"flexsearch": "^0.8.167",
+		"rxdb": "^16.12.0",
+		"rxjs": "^7.8.2"
 	},
 	"license": "MIT"
 }

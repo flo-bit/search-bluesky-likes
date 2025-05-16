@@ -5,13 +5,14 @@
 	import { Heading } from '@fuxui/base';
 </script>
 
-<div class="mx-auto max-w-xl px-4 my-18 md:my-28">
+<div class="mx-auto my-18 max-w-xl px-4 md:my-28">
 	{#if client.isInitializing}
 		<Heading>Loading...</Heading>
 	{/if}
 
 	{#if !client.isInitializing && !client.agent}
 		<Heading class="mb-8">Search your bluesky likes</Heading>
+
 		<BlueskyLogin login={async (handle: string) => {
 			localStorage.removeItem('likes-ids');
 			await login(handle);

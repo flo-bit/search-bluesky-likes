@@ -4,10 +4,15 @@
 	import { onMount } from 'svelte';
 	import { initClient } from '$lib/oauth';
 	import { Head, Toaster } from '@fuxui/base';
+	import { db } from '$lib/db/database.svelte';
+	import { initDBClient } from '$lib/db/database';
 
 	let { children } = $props();
 
-	onMount(() => {
+	onMount(async () => {
+		db.database = await initDBClient();
+		db.subscribeToChanges();
+		
 		initClient();
 	});
 </script>
