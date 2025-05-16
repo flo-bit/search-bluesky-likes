@@ -100,7 +100,7 @@
 		let cursor = undefined;
 		let response = undefined;
 		let found = false;
-		let limit = 10;
+		let limit = 100;
 		do {
 			try {
 				response = await client.rpc.request({
@@ -127,13 +127,27 @@
 				if (likesIds.has(like.post.uri)) {
 					found = true;
 					console.log('found like in local db, stopping getting more likes');
-					break;
-				}
 
-				addLikeId(like.post.uri);
+					cursor = localStorage.getItem('cursor');
+
+					if (cursor) {
+						console.log('cursor found in local storage, getting more likes starting from cursor');
+						localStorage.removeItem('cursor');
+
+						found = false;
+					}
+
+					break;
+				} else {
+					addLikeId(like.post.uri);
+				}
 			}
 
-			limit = 100;
+			if (cursor && response?.data.feed.length > 0) {
+				localStorage.setItem('cursor', cursor);
+			} else {
+				localStorage.removeItem('cursor');
+			}
 		} while (cursor && response?.data.feed.length > 0 && !found);
 
 		for (let like of all) {
