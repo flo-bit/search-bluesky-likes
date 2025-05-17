@@ -54,11 +54,7 @@
 			let profile = localStorage.getItem(`profile-${lastLoginDid}`);
 
 			if (profile) {
-				lastLogin = {
-					...JSON.parse(profile),
-					handle:
-						'bhvgsfabjkdvsbgfhdjnewjfvshbgsjdrndefgbgjfnkredfjgbhfdnksmfjgbhfdnrsfgjbnndksmefjgbvjn'
-				};
+				lastLogin = JSON.parse(profile)
 			}
 		}
 	});
