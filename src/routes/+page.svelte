@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { client, login } from '$lib/oauth';
-	import { BlueskyLogin } from '@fuxui/social';
+	import { BlueskyLogin } from '$lib/bluesky-login';
 	import Search from './Search.svelte';
 	import { Heading } from '@fuxui/base';
 </script>

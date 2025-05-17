@@ -79,10 +79,10 @@ export async function login(handle: string) {
 export async function logout() {
 	const currentAgent = client.agent;
 	if (currentAgent) {
-		const did = currentAgent.session.info.sub;
+		//const did = currentAgent.session.info.sub;
 
-		localStorage.removeItem('last-login');
-		localStorage.removeItem(`profile-${did}`);
+		//localStorage.removeItem('last-login');
+		//localStorage.removeItem(`profile-${did}`);
 
 		await currentAgent.signOut();
 		client.session = null;
