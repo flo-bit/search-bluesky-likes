@@ -3,7 +3,7 @@
 
 	import { onMount } from 'svelte';
 	import { initClient } from '$lib/oauth';
-	import { Head, Toaster } from '@fuxui/base';
+	import { Head, ThemeToggle, Toaster } from '@fuxui/base';
 
 	let { children } = $props();
 
@@ -18,3 +18,5 @@
 <Toaster />
 
 <Head title="Search Bluesky Likes" emojiFavicon="🦋" />
+
+<ThemeToggle class="fixed top-4 right-4" />

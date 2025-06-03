@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { client, logout } from '$lib/oauth';
-	import { Avatar, Button, Heading, Input, Modal, Navbar, Popover, toast } from '@fuxui/base';
+	import { Avatar, Button, Heading, Input, Modal, Navbar, Popover, ThemeToggle, toast } from '@fuxui/base';
 	import { blueskyPostToPostData, Post } from '$lib/post';
 	import { Document, Charset, IndexedDB } from 'flexsearch';
 	import { onMount } from 'svelte';
@@ -121,26 +121,22 @@
 			all.push(...response?.data.feed);
 
 			cursor = response?.data.cursor;
-			console.log(response?.data.feed);
 
 			for (let like of response?.data.feed) {
-				if (likesIds.has(like.post.uri)) {
-					found = true;
-					console.log('found like in local db, stopping getting more likes');
-
-					cursor = localStorage.getItem('cursor');
-
-					if (cursor) {
-						console.log('cursor found in local storage, getting more likes starting from cursor');
-						localStorage.removeItem('cursor');
-
-						found = false;
-					}
-
-					break;
-				} else {
+				if (!likesIds.has(like.post.uri)) {
 					addLikeId(like.post.uri);
+					continue;
 				}
+
+				found = true;
+				cursor = localStorage.getItem('cursor');
+
+				if (cursor) {
+					localStorage.removeItem('cursor');
+					found = false;
+				}
+
+				break;
 			}
 
 			if (cursor && response?.data.feed.length > 0) {
@@ -175,7 +171,6 @@
 				limit: 20
 			})
 			.then((res) => {
-				console.log(res);
 				results = res;
 			});
 	});
@@ -213,9 +208,9 @@
 {/if}
 
 {#if results.length > 0 && search}
-	<ul class="divide-base-100 mt-4 flex flex-col divide-y text-sm">
+	<ul class=" mt-4 flex flex-col divide-y text-sm">
 		{#each results as result (result.doc.uri)}
-			<div class="border-base-200 relative border-b py-2">
+			<div class="border-base-200 dark:border-base-900 relative border-b py-2">
 				<Post
 					href={getLink(result.doc.uri, result.doc.author.handle)}
 					liked
@@ -226,18 +221,22 @@
 		{/each}
 	</ul>
 {:else if search}
-	<div class="mt-4 text-sm font-semibold">No results</div>
+	<div class="text-base-600 dark:text-base-400 mt-4 text-sm font-semibold">No results</div>
 {/if}
 
 <div class="fixed right-3 bottom-2">
-	<Popover class="flex flex-col items-start p-1">
+	<Popover class="flex flex-col items-start gap-2 p-2">
 		{#snippet child({ props })}
 			<button {...props} class="cursor-pointer hover:opacity-90">
 				<Avatar src={client.profile?.avatar} />
 			</button>
 		{/snippet}
-		<Button variant="ghost" onclick={() => (infoModalOpen = true)}>Info</Button>
+		<ThemeToggle class="backdrop-blur-none absolute top-1 right-1" />
+		<Button class="backdrop-blur-none" variant="ghost" onclick={() => (infoModalOpen = true)}
+			>Info</Button
+		>
 		<Button
+			class="backdrop-blur-none"
 			variant="ghost"
 			onclick={() => {
 				clearIndex();
@@ -245,23 +244,26 @@
 				getLikes();
 			}}>Refresh all</Button
 		>
-		<Button variant="ghost" onclick={logout}>Logout</Button>
+		<Button class="backdrop-blur-none" variant="ghost" onclick={logout}>Logout</Button>
 	</Popover>
 </div>
 
 <Modal bind:open={infoModalOpen}>
-	<div class="text-base-700 flex flex-col gap-4 text-sm">
+	<div class="text-base-700 dark:text-base-300 flex flex-col gap-4 text-sm">
 		<div class="flex gap-2">
 			Made by
 			<div class="flex items-center gap-2">
-				<a target="_blank" href="https://flo-bit.dev" class="text-accent-600 font-semibold"
+				<a
+					target="_blank"
+					href="https://flo-bit.dev"
+					class="text-accent-600 dark:text-accent-400 hover:text-accent-500 dark:hover:text-accent-500 font-semibold"
 					>flo-bit</a
 				>
 
 				<a
 					href="https://bsky.app/profile/flo-bit.dev"
 					target="_blank"
-					class="text-accent-700 hover:text-accent-600 dark:text-base-300 dark:hover:text-accent-400 transition-colors"
+					class="text-accent-700 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-500 transition-colors"
 				>
 					<span class="sr-only">Bluesky</span>
 
@@ -280,9 +282,7 @@
 			</div>
 		</div>
 
-		<p>
-			Send me a message if you have any questions, problems or feedback!
-		</p>
+		<p>Send me a message if you have any questions, problems or feedback!</p>
 
 		<a
 			href="https://github.com/flo-bit/search-bluesky-likes"

@@ -19,18 +19,18 @@
 			}}
 		/>
 
-		<div class="text-base-700 mt-36 flex text-sm flex-col gap-4">
+		<div class="text-base-700 dark:text-base-300 mt-36 flex text-sm flex-col gap-4">
 			<div class="flex gap-2">
 				Made by
 				<div class="flex items-center gap-2">
-					<a target="_blank" href="https://flo-bit.dev" class="text-accent-600 font-semibold"
+					<a target="_blank" href="https://flo-bit.dev" class="text-accent-600 dark:text-accent-400 hover:text-accent-500 dark:hover:text-accent-500 font-semibold"
 						>flo-bit</a
 					>
 
 					<a
 						href="https://bsky.app/profile/flo-bit.dev"
 						target="_blank"
-						class="text-accent-700 hover:text-accent-600 dark:text-base-300 dark:hover:text-accent-400 transition-colors"
+						class="text-accent-700 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-500 transition-colors"
 					>
 						<span class="sr-only">Bluesky</span>
 

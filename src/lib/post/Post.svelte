@@ -69,7 +69,7 @@
 		<span class="sr-only">Open post</span>
 
 		<div
-			class="bg-base-400 absolute -inset-1 -z-10 rounded-2xl opacity-0 transition-colors group-hover:opacity-5"
+			class="bg-base-400 dark:bg-base-600 absolute -inset-1 -z-10 rounded-2xl opacity-0 transition-colors group-hover:opacity-5"
 		></div>
 	</a>
 
@@ -160,7 +160,7 @@
 					{/if}
 				</div>
 
-				<div class="group inline-flex items-center gap-2 text-sm">
+				<div class="group inline-flex items-center gap-2 text-sm text-accent-600 dark:text-accent-400">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 24 24"
