@@ -98,6 +98,7 @@
 		let all = [];
 
 		let cursor = undefined;
+		let prevCursor = undefined;
 		let response = undefined;
 		let found = false;
 		let limit = 100;
@@ -120,7 +121,12 @@
 			}
 			all.push(...response?.data.feed);
 
+			prevCursor = cursor;
 			cursor = response?.data.cursor;
+			
+			if (cursor && cursor === prevCursor) {
+				break;
+			}
 
 			for (let like of response?.data.feed) {
 				if (!likesIds.has(like.post.uri)) {
